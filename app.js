@@ -22,33 +22,26 @@ $('.image-expand').addEventListener('click',()=>{const src=$('#space-image');$('
 $$('dialog').forEach(dialog=>{dialog.querySelector('.dialog-close').addEventListener('click',()=>dialog.close());dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close();}});});
 $('.grid-toggle').addEventListener('click',e=>{const show=!document.body.classList.contains('show-grid');document.body.classList.toggle('show-grid',show);e.currentTarget.setAttribute('aria-pressed',String(show));});
 
-/* Макет не отправляет и не сохраняет введённые данные. */
-const form=$('#inquiry-form'), result=$('#form-result');
-const contactConfig=window.OMSK_CONTACT||{mode:'demo',url:''};
-form.addEventListener('submit',e=>{
- e.preventDefault();
- if(!form.reportValidity())return;
- result.textContent='Это макет формы. Данные не отправлены. Рабочий приём заявок появится позже.';
-});
-form.addEventListener('input',()=>{result.textContent='';});
-$('.submit').disabled=false;
-if(contactConfig.mode==='yandex'&&contactConfig.url){
- try{
-  const url=new URL(contactConfig.url);
-  if(url.protocol!=='https:'||url.hostname!=='forms.yandex.ru'||url.username||url.password||!/^\/(u|cloud)\/[a-zA-Z0-9_-]+\/?$/.test(url.pathname))throw new Error('Invalid form URL');
-  form.hidden=true;
-  const host=$('#hosted-contact');host.hidden=false;
-  const open=host.querySelector('a');open.href=url.href;open.hidden=false;
-  url.searchParams.set('iframe','1');url.searchParams.set('theme','light');
-  const frame=document.createElement('iframe');frame.title='Обратная связь с технопарком';frame.src=url.href;frame.loading='lazy';host.prepend(frame);
-  host.querySelector('.hosted-message').textContent='Если форма не загрузилась, откройте её в отдельном окне.';
-  $('.form-edition').textContent='Расскажите, чем мы можем быть полезны вашей команде.';
- }catch{result.textContent='Рабочая форма пока недоступна. Ниже показан макет без отправки данных.';}
+/* Официальная форма: ответы и подтверждение отправки обрабатывает Яндекс. */
+const contactConfig=window.OMSK_CONTACT;
+const host=$('#hosted-contact');
+const frame=$('#yandex-inquiry');
+try{
+ const url=new URL(contactConfig.url);
+ if(url.protocol!=='https:'||url.hostname!=='forms.yandex.ru'||url.username||url.password||!/^\/(u|cloud)\/[a-zA-Z0-9_-]+\/?$/.test(url.pathname))throw new Error('Invalid form URL');
+ const publicUrl=new URL(url);publicUrl.searchParams.delete('iframe');
+ host.querySelector('.hosted-open').href=publicUrl.href;
+ url.searchParams.set('iframe','1');
+ if(frame.src!==url.href)frame.src=url.href;
+ frame.name='ya-form-'+url.pathname.split('/').filter(Boolean).at(-1);
+}catch{
+ frame.hidden=true;
+ host.querySelector('.hosted-message').textContent='Форма временно недоступна. Пожалуйста, попробуйте позже.';
 }
 
 /* Появление при прокрутке. Без JS и при reduced-motion всё видно сразу. */
 const motion=matchMedia('(prefers-reduced-motion: reduce)');
-const revealItems=$$('.section-kicker, .editorial h2, .editorial-copy, .split-heading h2, .split-heading > p, .audiences article, .facts > div, .space-panel, .floor-details, .connection-map, .services article, .progress-grid figure, .project-note, .team-card, .team-note, .inquiry-copy, #inquiry-form');
+const revealItems=$$('.section-kicker, .editorial h2, .editorial-copy, .split-heading h2, .split-heading > p, .audiences article, .facts > div, .space-panel, .floor-details, .connection-map, .services article, .progress-grid figure, .project-note, .team-card, .team-note, .inquiry-copy, #hosted-contact');
 let revealObserver;
 if('IntersectionObserver' in window&&!motion.matches){
  revealObserver=new IntersectionObserver(entries=>entries.forEach(entry=>{
